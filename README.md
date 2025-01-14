@@ -17,6 +17,6 @@
 ![image](https://tse4.mm.bing.net/th?id=OIP.UOAyzah2DyK6wGROdHAQVgAAAA&rs=1&pid=ImgDetMain)
 히익;;;
 
-https://www.timeforum.co.kr/files/attach/images/77/422/994/011/e078ea716e52a6f86135c653f32bbf5d.JPG
+![image](https://www.timeforum.co.kr/files/attach/images/77/422/994/011/e078ea716e52a6f86135c653f32bbf5d.JPG)
 
 ⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐
