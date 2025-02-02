@@ -1,3 +1,228 @@
-https://github.com/telekom-security/tpotce
-허니팟 중 최신의 허니팟인 T-Pot에 대한 설치 방법에 대해 안내 중!!!
-Ubuntu 22.04 버전도 존재 확인
+# vi /etc/resolv.conf
+
+	nameserver 10.0.0.200		# DNS 서버 찾아서 넣기!!!
+	nameserver 8.8.8.8
+
+# apt install -y openssh-server
+# chmod 777 /home/$user
+# systemctl start ssh
+# systemctl stop ssh    <- 추후 도커에서 ssh 포트를 22번으로 사용할 예정이라면, 포트번호를 변경해서 재시작해주어야 ssh 로그가 쌓임(cowrie에 로그를 쌓기 위해서)!!!
+# chmod 755 /home/$user
+# mv /home/$user/http_ca.crt /etc/filebeat
+$ mkdir /home/$user/honeypot_logs
+$ chmod 755 ./honeypot_logs
+# docker run -d --name dionaea \
+  -v /home/$user/honeypot_logs/dionaea:/opt/dionaea/var/log \
+  -p 80:80 -p 443:443 -p 21:21 -p 22:22 \
+  hahatwo/dionaea
+# docker run -d --name cowrie \
+  -v /home/$user/honeypot_logs/cowrie:/opt/cowrie/var/log \
+  -p 2222:2222 \
+  hahatwo/cowrie
+# docker run -d --name mysqlhoneypotd \    <- 얘는 아얘 로그 자체가 쌓이지 않는듯???
+  -v /home/$user/honeypot_logs/mysqlhoneypotd:/var/log/mysqlhoneypotd \
+  -p 3306:3306 \
+  jondkelley/mysqlhoneypotd
+# wget -q0 - https://artifacts.elastic.co/GPG-KEY-elasticsearch | sudo apt-key add -
+# apt-get install apt-transport-https
+# apt-get update && apt-get install filebeat
+# systemctl enable filebeat
+# cd /etc/filebeat
+# vi filebeat.yml
+
+------------------------------------------------------------------------------------------------
+
+	filebeat.inputs:
+	  - type: log
+	    enabled: true
+	    paths: 
+	      - /home/$user/honeypot_logs/dionaea/*.json		# *.log로 지정했었으나, docker에서 저장되는 파일은 *.json이었다.
+	    fields:									# logstash에서 구분할 때 사용되는 필드
+	      type: "dionaea"
+	  - type: log
+	    enabled: true
+	    paths: 
+	      - /home/$user/honeypot_logs/cowrie/*.log
+	    fields:
+	      type: "cowrie"	
+	  - type: log
+	    enabled: true
+	    paths: 
+	      - /home/$user/honeypot_logs/mysqlhoneypotd/*.log
+	    fields:
+	      type: "mysqlhoneypotd"
+
+	~~~~~~~~~~
+
+	~~~~~~~~~~
+
+	# filestream is an input for collecting log messages from files.		# 위의 type과 들여쓰기가 일치해야 한다!!!
+	  - type: filestream
+	
+	  # Unique ID among all inputs, an ID is required.
+	    id: my-filestream-id
+	
+	  # Change to true to enable this input configuration.
+	    enabled: true
+	
+	  # Paths that should be crawled and fetched. Glob based paths.
+	    paths:
+	      - /var/log/*.log
+	    #- c:\programdata\elasticsearch\logs\*
+	
+------------------------------------------------------------------------------------------------
+
+	setup.kibana:
+	  host: "https://엘라스틱서치(키바나)URL주소:엘라스틱서치(키바나)포트번호(주로 5601)"
+	  protocol: "https"
+	  username: "엘라스틱서치 또는 키바나 ID"
+	  password: "엘라스틱서치 또는 키바나 PW"
+	  ssl.enabled: true			# 만약 암호화를 안할 예정이라면 false
+	  ssl.verification_mode: none
+
+------------------------------------------------------------------------------------------------
+
+	output.elasticsearch:	
+					# 만약 logstash를 사용할 예정이라면 이하의 내용은 logstash에서 설정해야 하는 내용
+					# elasticsearch 또는 logstash 중 하나만 사용할 수 있다고 함!!!
+	  # Array of hosts to connect to.
+	  hosts: ["https://엘라스틱서치(키바나)URL주소:엘라스틱서치(키바나)포트번호(주로 9200)"]
+	  preset: balanced
+	  protocol: "https"
+	  username: "엘라스틱서치 또는 키바나 ID"
+	  password: "엘라스틱서치 또는 키바나 PW"
+	  ssl.certificate_authorities: ["/etc/filebeat/엘라스틱서치공개키"]		# 만약 logstash로 보낼 예정이면 이걸 사용하면 안됨!
+	  index: "honeypot_logs-index-%{[agent.version]}-%{+yyyy.MM.dd}"
+	
+	setup.template.enabled: true
+	setup.template.name: "honeypot_logs-index"
+	setup.template.pattern: "honeypot_logs-index-*"
+	setup.template.overwrite: true
+
+------------------------------------------------------------------------------------------------
+
+	output.logstash:
+					# elasticsearch 또는 logstash 중 하나만 사용할 수 있다고 함!!!
+	  # The Logstash hosts
+	  hosts: ["엘라스틱서치(키바나)IP번호:엘라스틱서치(키바나)포트번호(주로 5044)"]
+	  ssl.certificate_authorities: ["/etc/filebeat/로그스테시공개키"]		# 만약 elasticsearch로 보낼 예정이면 이걸 사용하면 안됨
+
+------------------------------------------------------------------------------------------------
+
+# filebeat test config -c /etc/filebeat/filebeat.yml --path.data /var/lib/filebeat --path.home /usr/share/filebeat
+# filebeat test output -c /etc/filebeat/filebeat.yml --path.data /var/lib/filebeat --path.home /usr/share/filebeat
+
+# docker exec -it dionaea /bin/bash
+	# cd opt/dionaea/etc/dionaea
+	# ls
+	# cp ./dionaea.cfg ./dionaea.cfg.bak
+	# ls
+	# cat >> ./dionaea.cfg << EOF
+	> logdir = "/opt/dionaea/var/log"
+	> modules.enabled = ["ssh", "ftp", "http", "https"]
+	> listen_addresses = ["0.0.0.0"]
+	> [listener]
+	> interface = "0.0.0.0"
+	> port = 21
+	> [listener]
+	> interface = "0.0.0.0"
+	> port = 22
+	> [listener]
+	> interface = "0.0.0.0"
+	> port = 80
+	> [listener]
+	> interface = "0.0.0.0"
+	> port = 443
+	> EOF
+	# cat ./dionaea.cfg
+	# exit
+
+# ls /home/$user/honeypot_logs/dionaea			# .log 또는 .json 파일이 생성되었는지 확인
+# vi /home/$user/honeypot_logs/cowrie_log.sh
+
+	#!/bin/bash
+	
+	docker logs cowrie >> /home/$user/honeypot_logs/cowrie/cowrie.log 2>&1
+
+# /home/$user/honeypot_logs/cowrie_log.sh			# shell이 작동하는지 확인
+# ls /home/$user/honeypot_logs/cowrie				# log파일이 생성되었는지 확인
+# chmod +x /home/$user/honeypot_logs/cowrie_log.sh
+# crontab -e
+
+	*/5 * * * * /home/$user/honeypot_logs/cowrie_log.sh				# crontab 추가하기
+
+# vi /etc/logrotate.d/cowrie
+
+	/home/$user/honeypot_logs/cowrie/cowrie.log {
+		daily
+		rotate 7
+		compress
+		missingok
+		nitifempty
+		copyruncate
+	}
+
+# vi /home/$user/honeypot_logs/mysqlhoneypotd_log.sh
+
+	#!/bin/bash
+	
+	docker logs mysqlhoneypotd >> /home/$user/honeypot_logs/mysqlhoneypotd/mysqlhoneypotd.log 2>&1
+
+# /home/$user/honeypot_logs/mysqlhoneypotd_log.sh			# shell이 작동하는지 확인
+# ls /home/$user/honeypot_logs/mysqlhoneypotd				# log파일이 생성되었는지 확인
+
+# chmod +x /home/$user/honeypot_logs/mysqlhoneypotd_log.sh
+# crontab -e
+
+	*/5 * * * * /home/$user/honeypot_logs/mysqlhoneypotd_log.sh		# crontab 추가하기
+
+# vi /etc/logrotate.d/mysqlhoneypotd
+
+	/home/$user/honeypot_logs/mysqlhoneypotd/mysqlhoneypotd.log {
+		daily
+		rotate 7
+		compress
+		missingok
+		nitifempty
+		copyruncate
+	}
+
+# filebeat -e -c /etc/filebeat/filebeat.yml
+
+-------------------------------------------
+
+키바나 Dev Tools				<= 로그서버의 역할
+
+GET /_cat/indices?v
+
+PUT _index_template/honeypot_logs-index-template
+{
+	"index_patterns": ["honeypot_logs-index*"],
+	"data_stream": {},
+	"template": {
+	  "settings": {
+	    "number_of_shards": 1
+	  }
+	}
+}
+
+---------------------------------------------
+{
+  "acknowledged": true
+}
+이게 뜨면 키바나의 Dev Tools가 제대로 적용이 되는 것!!!!
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
