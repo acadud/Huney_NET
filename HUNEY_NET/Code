@@ -169,7 +169,7 @@ $ chmod 755 ./honeypot_logs
 		rotate 7
 		compress
 		missingok
-		nitifempty
+		notifempty
 		copyruncate
 	}
 
@@ -194,7 +194,7 @@ $ chmod 755 ./honeypot_logs
 		rotate 7
 		compress
 		missingok
-		nitifempty
+		notifempty
 		copyruncate
 	}
 
