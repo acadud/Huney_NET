@@ -3,30 +3,41 @@
 	nameserver 10.0.0.200		# DNS 서버 찾아서 넣기!!!
 	nameserver 8.8.8.8
 
+# apt install -y podman-docker
+# apt install -y docker.io
 # apt install -y openssh-server
+# systemctl enable --now ssh           <- 추후 도커에서 ssh 포트를 22번으로 사용할 예정이라면, 포트번호를 변경해서 재시작해주어야 ssh 로그가 쌓임(cowrie에 로그를 쌓기 위해서)!!!
 # chmod 777 /home/$user
-# systemctl start ssh
-# systemctl stop ssh    <- 추후 도커에서 ssh 포트를 22번으로 사용할 예정이라면, 포트번호를 변경해서 재시작해주어야 ssh 로그가 쌓임(cowrie에 로그를 쌓기 위해서)!!!
-# chmod 755 /home/$user
-# mv /home/$user/http_ca.crt /etc/filebeat
+
+
 $ mkdir /home/$user/honeypot_logs
 $ chmod 755 ./honeypot_logs
-# docker run -d --name dionaea \
-  -v /home/$user/honeypot_logs/dionaea:/opt/dionaea/var/log \
-  -p 80:80 -p 443:443 -p 21:21 -p 22:22 \
-  hahatwo/dionaea
-# docker run -d --name cowrie \
-  -v /home/$user/honeypot_logs/cowrie:/opt/cowrie/var/log \
-  -p 2222:2222 \
-  hahatwo/cowrie
-# docker run -d --name mysqlhoneypotd \    <- 얘는 아얘 로그 자체가 쌓이지 않는듯???
-  -v /home/$user/honeypot_logs/mysqlhoneypotd:/var/log/mysqlhoneypotd \
-  -p 3306:3306 \
-  jondkelley/mysqlhoneypotd
 # wget -q0 - https://artifacts.elastic.co/GPG-KEY-elasticsearch | sudo apt-key add -
 # apt-get install apt-transport-https
 # apt-get update && apt-get install filebeat
 # systemctl enable filebeat
+
+# docker pull hahatwo/dionaea
+# docker pull hahatwo/cowrie
+# docker pull jondkelley/mysqlhoneypotd
+
+# docker run -d --name dionaea \
+  -v /home/$user/honeypot_logs/dionaea:/opt/dionaea/var/log \
+  -p 80:80 -p 443:443 -p 21:21 -p 22:22 \
+  --restart always \
+  hahatwo/dionaea
+# docker run -d --name cowrie \
+  -v /home/$user/honeypot_logs/cowrie:/opt/cowrie/var/log \
+  -p 2222:2222 \
+  --restart always \
+  hahatwo/cowrie
+# docker run -d --name mysqlhoneypotd \    <- 얘는 아얘 로그 자체가 쌓이지 않는듯???
+  -v /home/$user/honeypot_logs/mysqlhoneypotd:/var/log/mysqlhoneypotd \
+  -p 3306:3306 \
+  --restart always \
+  jondkelley/mysqlhoneypotd
+# chmod 755 /home/$user
+# mv /home/$user/http_ca.crt /etc/filebeat
 # cd /etc/filebeat
 # vi filebeat.yml
 
