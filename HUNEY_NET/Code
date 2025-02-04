@@ -2,7 +2,7 @@
 
 	nameserver 10.0.0.200		# DNS 서버 찾아서 넣기!!!
 	nameserver 8.8.8.8
-
+# apt -y install net-tools
 # apt install -y podman-docker
 # apt install -y docker.io
 # apt install -y openssh-server
@@ -23,12 +23,12 @@ $ chmod 755 ./honeypot_logs
 
 # docker run -d --name dionaea \
   -v /home/$user/honeypot_logs/dionaea:/opt/dionaea/var/log \
-  -p 80:80 -p 443:443 -p 21:21 -p 22:22 \
+  -p 80:80 -p 443:443 -p 21:21 -p 2222:22 \
   --restart always \
   hahatwo/dionaea
 # docker run -d --name cowrie \
   -v /home/$user/honeypot_logs/cowrie:/opt/cowrie/var/log \
-  -p 2222:2222 \
+  -p 2223:22 \
   --restart always \
   hahatwo/cowrie
 # docker run -d --name mysqlhoneypotd \    <- 얘는 아얘 로그 자체가 쌓이지 않는듯???
