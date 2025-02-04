@@ -1,1 +1,36 @@
 
+DNS 
+
+
+
+# dnf install bind bind-utils -y
+
+# ifconfig
+
+ens160: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 172.16.0.8  netmask 255.255.255.0  broadcast 172.16.0.255 
+        inet6 fe80::20c:29ff:fead:8469  prefixlen 64  scopeid 0x20<link>
+        ether 00:0c:29:ad:84:69  txqueuelen 1000  (Ethernet)
+        RX packets 15442  bytes 15529498 (14.8 MiB)
+        RX errors 0  dropped 42  overruns 0  frame 0
+        TX packets 4506  bytes 341591 (333.5 KiB)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+# firewall-cmd --permanent --add-service=dns
+# firewall-cmd --reload
+[root@localhost roror]# firewall-cmd --list-all
+public (active)
+  target: default
+  icmp-block-inversion: no
+  interfaces: ens160
+  sources: 
+  services: cockpit dhcpv6-client dns ssh
+  ports: 
+  protocols: 
+  forward: yes
+  masquerade: no
+  forward-ports: 
+  source-ports: 
+  icmp-blocks: 
+  rich rules: 
+
