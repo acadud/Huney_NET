@@ -1,1 +1,56 @@
+web server 구축
+
+NAT로 구축
+
+고정 IP
+address1=172.16.0.10/24,172.16.0.1
+dns=172.16.0.10;8.8.8.8;
+method=manual
+
+# dnf install httpd* -y
+# systemctl enable --now httpd
+
+# firewall-cmd --permanent --add-service=http
+# firewall-cmd --permanent --add-service=https
+# firewall-cmd --reload 
+
+[root@webserver html]#  firewall-cmd --list-all
+public (active)
+  target: default
+  icmp-block-inversion: no
+  interfaces: ens160
+  sources: 
+  services: cockpit dhcpv6-client http https ssh
+  ports: 
+  protocols: 
+  forward: yes
+  masquerade: no
+  forward-ports: 
+  source-ports: 
+  icmp-blocks: 
+  rich rules: 
+
+구동이 잘 되는지 확인
+# vi /var/www/html/index.html
+안에 내용은 아무거나 작성
+ip로 접속했을때 작성한 문구가 뜨면 구축완료
+
+# dnf install php-* -y
+# systemctl enable --now php-fpm
+
+# vi /etc/httpd/conf/httpd.conf
+<IfModule dir_module>
+    DirectoryIndex index.html index.php # 추가해주기 안되면 순서도 앞쪽으로 변경
+
+[root@webserver html]# pwd
+/var/www/html
+#vi info.php
+<?php
+phpinfo();
+?>
+
+http://10.0.0.155/info.php 로 접속후 php상태창이 뜨면 구축 완료
+
+
+
 
