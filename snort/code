@@ -1,1 +1,72 @@
 
+snort 구축
+
+스크립트
+# vi /usr/bin/run-snort
+#!/bin/bash
+
+# 루트 권한 확인
+if [ "$(id -u)" -ne 0 ]; then
+    echo "$(id -u)로 로그인 하였습니다. ! 루트로 로그인 하세요"
+    exec sudo bash "$0" "$@"
+    exit
+fi
+
+# 공통 함수 정의
+run_snort() {
+    local config_file=$1
+    local additional_opts=$2
+    echo "Snort 실행: $config_file"
+    xterm -fg black -bg white -fn *-fixed-*-*-*-20-* -e \
+        "echo \"snort $additional_opts -c $config_file\"; \
+        snort $additional_opts -c $config_file; bash"
+    killall -9 snort
+}
+
+apply_netplan_config() {
+    local config_file=$1
+    echo "Netplan 설정 적용: $config_file"
+    cp -af "/root/backup/$config_file" /etc/netplan/
+    netplan apply
+}
+
+# 메뉴 출력
+while(true)
+do
+echo "
+ 1) Roror's Snort Rules
+ 2) Roror's Local Rules 
+ 3) Roror's IPS 
+ 4) Roror's IPS MODE
+ 5) Roror's IDS MODE
+"
+
+read -p "choice : " num
+
+# 사용자 입력 처리
+
+case "$num" in
+    1)
+        run_snort "/etc/snort/snort.conf" "-A console -q -u snort -g snort"
+        ;;
+    2)
+        run_snort "/etc/snort/snort_ids.conf" "-A console -q -u snort -g snort"
+        ;;
+    3)
+        run_snort "/etc/snort/snort_af.conf" "-Q -A console -q -u snort -g snort -i ens33:ens36 -N"
+        ;;
+    4)
+        apply_netplan_config "ips/50-cloud-init.yaml"
+        ;;
+    5)
+        apply_netplan_config "ids/50-cloud-init.yaml"
+
+        ;;
+    *)
+        echo "잘못된 선택입니다. 숫자를 입력하세요."
+        ;;
+esac
+done
+
+전에 있던거 그대로 사용했기때문에 스크립트 파일만 둡니다...
+일단 구축은 완료 했고 탐지가 되는게 확인
