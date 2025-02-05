@@ -1,7 +1,10 @@
 
 DNS 
 
-
+고정 iP
+address1=172.16.0.8/24,172.16.0.1
+dns=172.16.0.8;8.8.8.8;
+method=manual
 
 # dnf install bind bind-utils -y
 
