@@ -7,6 +7,9 @@ address1=172.16.0.10/24,172.16.0.1
 dns=172.16.0.10;8.8.8.8;
 method=manual
 
+APM 구축 
+---------------
+1. Apache
 # dnf install httpd* -y
 # systemctl enable --now httpd
 
@@ -34,9 +37,14 @@ public (active)
 # vi /var/www/html/index.html
 안에 내용은 아무거나 작성
 ip로 접속했을때 작성한 문구가 뜨면 구축완료
-
+-------------------------------------------------------
+2. php
 # dnf install php-* -y
 # systemctl enable --now php-fpm
+
+# vi /etc/php.ini
+; http://php.net/short-open-tag
+short_open_tag = On -> On으로 변경 # 짧은 PHP 태그 (Short Open Tag) 쓸 수 있게 하는 옵션
 
 # vi /etc/httpd/conf/httpd.conf
 <IfModule dir_module>
@@ -50,6 +58,12 @@ phpinfo();
 ?>
 
 http://10.0.0.155/info.php 로 접속후 php상태창이 뜨면 구축 완료
+
+---------------------------------------
+
+3. mysql (mariadb)
+
+
 
 
 
