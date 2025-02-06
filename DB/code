@@ -22,3 +22,4 @@ MariaDB [(none)]> CREATE DATABASE wordpress;
 CREATE USER 'admin'@'%' IDENTIFIED BY 'qhdks12';
 GRANT ALL PRIVILEGES ON wordpress.* TO 'admin'@'%';
 
+cp -a wp-config-sample.php wp-config.php
