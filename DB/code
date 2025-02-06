@@ -20,6 +20,19 @@ default-character-set = utf8mb4
 
 MariaDB [(none)]> CREATE DATABASE wordpress;
 CREATE USER 'admin'@'%' IDENTIFIED BY 'qhdks12';
-GRANT ALL PRIVILEGES ON wordpress.* TO 'admin'@'%';
+GRANT ALL PRIVILEGES ON wordpress.* TO 'admin'@'localhost' IDENTIFIED BY 'qhdks12';
+flush PRIVILEGES;
+
+MariaDB [wordpress]> show grants for admin@localhost;
++--------------------------------------------------------------------------------------------------------------+
+| Grants for admin@localhost                                                                                   |
++--------------------------------------------------------------------------------------------------------------+
+| GRANT USAGE ON *.* TO `admin`@`localhost` IDENTIFIED BY PASSWORD '*57AD17D39861C63B65820A6A71AA8CB680AC629B' |
+| GRANT ALL PRIVILEGES ON `wordpress`.* TO `admin`@`localhost`                                                 |
++--------------------------------------------------------------------------------------------------------------+
+2 rows in set (0.000 sec)
+
+
 
 cp -a wp-config-sample.php wp-config.php
+
