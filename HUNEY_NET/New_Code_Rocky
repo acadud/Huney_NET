@@ -168,11 +168,11 @@ $ su
 
 # vi named.rfc1912.zones
 
-zone "naver.comm" IN {
-        type master;
-        file "naver.commu.zone";
-        allow-update { none; };
-};
+	zone "naver.commu" IN {
+	        type master;
+	        file "naver.commu.zone";
+	        allow-update { none; };
+	};
 
 # cd /var/named/
 # cp named.localhost naver.commu.zone
@@ -191,6 +191,11 @@ zone "naver.comm" IN {
 	        AAAA    ::1
 
 # chown root:named ./naver.commu.zone
+# vi /etc/hosts
+
+	172.16.0.8   exit13.co.kr
+	172.16.0.14   elk.roror.co.kr
+
 # vi /etc/httpd/conf/httpd.conf
 
 	ServerName www.naver.commu:80
@@ -198,9 +203,17 @@ zone "naver.comm" IN {
 # systemctl restart httpd named php-fpm
 # filebeat test config -c /etc/filebeat/filebeat.yml --path.data /var/lib/filebeat --path.home /usr/share/filebeat
 # filebeat test output -c /etc/filebeat/filebeat.yml --path.data /var/lib/filebeat --path.home /usr/share/filebeat
+# filebeat -e -c /etc/filebeat/filebeat.yml
 
+# vi /etc/my.cnf.d/mariadb-server.cnf
 
+	[mysqld]
+	datadir=/var/lib/mysql
+	socket=/var/lib/mysql/mysql.sock
+	log-error=/var/log/mariadb/mariadb.log
+	pid-file=/run/mariadb/mariadb.pid
+	bind-address = 0.0.0.0
+	skip-networking = 0
 
-
-
+# systemctl restart mariadb
 
