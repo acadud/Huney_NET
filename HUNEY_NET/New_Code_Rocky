@@ -9,20 +9,25 @@ dnf -y upgrade
 # dnf -y install mariadb-server
 # dnf -y install mariadb
 # systemctl enable --now mariadb
+# dnf -y install bind bind-utils
 # dnf -y install unzip
 # vi /etc/NetworkManager/system-connections/ens34.nmconnection
 
-[ipv4]
-method=manual
-address1=172.16.0.17/24,172.16.0.1
-dns=8.8.8.8;172.16.0.8
+	[ipv4]
+	method=manual
+	address1=172.16.0.17/24,172.16.0.1
+	dns=172.16.0.8;8.8.8.8
 
+# vi /etc/resolv.conf
 
-[root@localhost pc1]# firewall-cmd --permanent --add-service={"http","https"}
-[root@localhost pc1]# firewall-cmd --permanent --add-port={3306/tcp,3306/udp}
-[root@localhost pc1]# firewall-cmd --permanent --add-port={5601/tcp,9200/tcp}
-[root@localhost pc1]# firewall-cmd --reload
-[root@localhost pc1]# firewall-cmd --list-all
+	nameserver 172.16.0.8
+	nameserver 8.8.8.8
+
+# firewall-cmd --permanent --add-service={"http","https"}
+# firewall-cmd --permanent --add-port={3306/tcp,3306/udp}
+# firewall-cmd --permanent --add-port={5601/tcp,9200/tcp}
+# firewall-cmd --reload
+# firewall-cmd --list-all
 
 -----------------------------------------------------
 elastic search down
@@ -31,17 +36,22 @@ elastic search down
 # ls
 # vi elasticsearch.repo
 
-[elasticsearch]
-name=Elasticsearch repository for 8.x packages
-baseurl=https://artifacts.elastic.co/packages/8.x/yum
-gpgcheck=1
-gpgkey=https://artifacts.elastic.co/GPG-KEY-elasticsearch
-enabled=1
-autorefresh=1
-type=rpm-md
+	[elasticsearch]
+	name=Elasticsearch repository for 8.x packages
+	baseurl=https://artifacts.elastic.co/packages/8.x/yum
+	gpgcheck=1
+	gpgkey=https://artifacts.elastic.co/GPG-KEY-elasticsearch
+	enabled=1
+	autorefresh=1
+	type=rpm-md
 
 # yum -y install filebeat
 # systemctl enable filebeat
+
+로그서버로부터 인증키를 받은 후!!!
+
+# mv /home/$user/http_ca.crt /etc/filebeat
+
 # cd /var/www/html/
 # ls
 # cp /home/pc1/
@@ -62,6 +72,135 @@ type=rpm-md
 	short_open_tag = On
 
 # systemctl restart php-fpm httpd
+# cd /etc/filebeat
+
+	filebeat.inputs:
+	- type: log
+	  enabled: true
+	  paths: 
+	    - /home/$user/honeypot_logs/access/*.log
+	    - /home/$user/honeypot_logs/error/*.log
+	  fields:
+	    log_type: web_access
+	  fields_under_root: true
+
+	processors:
+	- drop_event:
+	    when:
+	      not:
+	        or:
+	          - regexp:
+	              message: '.*(SELECT|UNION|INSERT|DELETE|UPDATE|DROP).*'  # SQL Injection
+	          - regexp:
+	              message: '.*(<script>|</script>|alert\().*'  # XSS
+	          - regexp:
+	              message: '.*(../|passwd|etc/shadow).*'  # Directory Traversal
+	          - regexp:
+	              message: '.*(admin|root|password).*'  # Brute Force 관련 키워드
+
+------------------------------------------------------------------------------------------------
+
+	setup.kibana:
+	  host: "https://엘라스틱서치(키바나)URL주소:엘라스틱서치(키바나)포트번호(주로 5601)"
+	  protocol: "https"
+	  username: "엘라스틱서치 또는 키바나 ID"
+	  password: "엘라스틱서치 또는 키바나 PW"
+	  ssl.enabled: true			# 만약 암호화를 안할 예정이라면 false
+	  ssl.verification_mode: none
+
+------------------------------------------------------------------------------------------------
+
+	output.elasticsearch:	
+					# 만약 logstash를 사용할 예정이라면 이하의 내용은 logstash에서 설정해야 하는 내용
+					# elasticsearch 또는 logstash 중 하나만 사용할 수 있다고 함!!!
+	  # Array of hosts to connect to.
+	  hosts: ["https://엘라스틱서치(키바나)URL주소:엘라스틱서치(키바나)포트번호(주로 9200)"]
+	  preset: balanced
+	  protocol: "https"
+	  username: "엘라스틱서치 또는 키바나 ID"
+	  password: "엘라스틱서치 또는 키바나 PW"
+	  ssl.certificate_authorities: ["/etc/filebeat/엘라스틱서치공개키"]		# 만약 logstash로 보낼 예정이면 이걸 사용하면 안됨!
+	  index: "honeypot_logs-index-%{[agent.version]}-%{+yyyy.MM.dd}"
+	
+	setup.template.enabled: true
+	setup.template.name: "honeypot_logs-index"
+	setup.template.pattern: "honeypot_logs-index-*"
+	setup.template.overwrite: true
+
+$ mkdir honeypot_logs
+$ chmod 755 honeypot_logs
+$ su
+# cd honeypot_logs/
+# mkdir access error
+# vi /home/pc1/honeypot_logs/sync_logs.sh
+
+	#!/bin/bash
+
+	# 원본 파일 경로
+	ACCESS_SRC="/var/log/httpd/access_log"
+	ERROR_SRC="/var/log/httpd/error_log"
+
+	# 대상 파일 경로
+	ACCESS_DST="/home/pc1/honeypot_logs/access/access.log"
+	ERROR_DST="/home/pc1/honeypot_logs/error/error.log"
+
+	# 동기화 실행
+	rsync -a --info=progress2 "$ACCESS_SRC" "$ACCESS_DST"
+	rsync -a --info=progress2 "$ERROR_SRC" "$ERROR_DST"
+
+# chmod +x /home/pc1/honeypot_logs/sync_logs.sh
+# crontab -e
+
+	*/5 * * * * /home/pc1/honeypot_logs/sync_logs.sh
+
+# vi /etc/named.conf
+
+	options {
+	        listen-on port 53 { localhost;172.16.0.17; };
+	        listen-on-v6 port 53 { ::1; };
+	        directory       "/var/named";
+	        dump-file       "/var/named/data/cache_dump.db";
+	        statistics-file "/var/named/data/named_stats.txt";
+	        memstatistics-file "/var/named/data/named_mem_stats.txt";
+	        secroots-file   "/var/named/data/named.secroots";
+	        recursing-file  "/var/named/data/named.recursing";
+	        allow-query     { any; };
+
+# vi named.rfc1912.zones
+
+zone "naver.comm" IN {
+        type master;
+        file "naver.commu.zone";
+        allow-update { none; };
+};
+
+# cd /var/named/
+# cp named.localhost naver.commu.zone
+# vi naver.commu.zone
+
+	$TTL 1D
+	@       IN SOA  @ admin.naver.commu. (
+	                                        0       ; serial
+	                                        1D      ; refresh
+	                                        1H      ; retry
+	                                        1W      ; expire
+	                                        3H )    ; minimum
+	        NS      @
+	        A       171.16.0.17
+	www     A       171.16.0.17
+	        AAAA    ::1
+
+# chown root:named ./naver.commu.zone
+# vi /etc/httpd/conf/httpd.conf
+
+	ServerName www.naver.commu:80
+
+# systemctl restart httpd named php-fpm
+# filebeat test config -c /etc/filebeat/filebeat.yml --path.data /var/lib/filebeat --path.home /usr/share/filebeat
+# filebeat test output -c /etc/filebeat/filebeat.yml --path.data /var/lib/filebeat --path.home /usr/share/filebeat
+
+
+
 
 
 
