@@ -1,0 +1,67 @@
+pc1
+qhdks12
+
+dnf -y upgrade
+# dnf -y install httpd
+# systemctl enable --now httpd
+# dnf -y install php php-fpm php-mysql*
+# systemctl enable --now php-fpm
+# dnf -y install mariadb-server
+# dnf -y install mariadb
+# systemctl enable --now mariadb
+# dnf -y install unzip
+# vi /etc/NetworkManager/system-connections/ens34.nmconnection
+
+[ipv4]
+method=manual
+address1=172.16.0.17/24,172.16.0.1
+dns=8.8.8.8;172.16.0.8
+
+
+[root@localhost pc1]# firewall-cmd --permanent --add-service={"http","https"}
+[root@localhost pc1]# firewall-cmd --permanent --add-port={3306/tcp,3306/udp}
+[root@localhost pc1]# firewall-cmd --permanent --add-port={5601/tcp,9200/tcp}
+[root@localhost pc1]# firewall-cmd --reload
+[root@localhost pc1]# firewall-cmd --list-all
+
+-----------------------------------------------------
+elastic search down
+# rpm --import https://artifacts.elastic.co/GPG-KEY-elasticsearch
+# cd /etc/yum.repos.d/
+# ls
+# vi elasticsearch.repo
+
+[elasticsearch]
+name=Elasticsearch repository for 8.x packages
+baseurl=https://artifacts.elastic.co/packages/8.x/yum
+gpgcheck=1
+gpgkey=https://artifacts.elastic.co/GPG-KEY-elasticsearch
+enabled=1
+autorefresh=1
+type=rpm-md
+
+# yum -y install filebeat
+# systemctl enable filebeat
+# cd /var/www/html/
+# ls
+# cp /home/pc1/
+# cp /home/pc1/insecure.zip ./
+# ls
+# unzip insecure.zip
+# mysql
+
+값 입력하기
+
+	> grant all privileges on pentest.* to 'admin'@'%' identified by 'password';
+	> flush privileges;
+
+# vi /etc/php.ini
+
+	allow_url_fopen = On
+	allow_url_include = On 
+	short_open_tag = On
+
+# systemctl restart php-fpm httpd
+
+
+
