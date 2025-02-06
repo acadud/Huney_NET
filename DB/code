@@ -1,1 +1,24 @@
 
+# curl -LsS https://downloads.mariadb.com/MariaDB/mariadb_repo_setup | bash -s -- --mariadb-server-version=10.6 --skip-maxscale --skip-tools
+
+# dnf install mariadb-server mariadb
+
+# vi /etc/my.cnf.d/charset.cnf
+[client] # 클라이언트에서 사용하는 문자 집합을 utf8mb4로 설정.
+default-character-set = utf8mb4 
+
+[mysqld] # 서버에서 사용하는 문자 집합과 정렬 방식을 utf8mb4와 utf8mb4_unicode_ci로 설정 (대소문자 구분 없음).
+character-set-server = utf8mb4
+collation-server = utf8mb4_unicode_ci
+
+[mysql] # MySQL 명령줄 클라이언트에서 기본 문자 집합을 utf8mb4로 설정.
+default-character-set = utf8mb4
+
+# systemctl enable --now mysql
+
+# mysql -uroot -p
+
+MariaDB [(none)]> CREATE DATABASE wordpress;
+CREATE USER 'admin'@'%' IDENTIFIED BY 'qhdks12';
+GRANT ALL PRIVILEGES ON wordpress.* TO 'admin'@'%';
+
